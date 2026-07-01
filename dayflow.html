@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dayflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f11;--surface:#17171a;--surface2:#1e1e22;--border:#2a2a2f;
+  --text:#e8e8ec;--muted:#7a7a85;--accent:#a78bfa;--accent2:#7c3aed;
+  --radius:12px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:0}
+.app{max-width:780px;margin:0 auto;padding:28px 20px}
+.header{margin-bottom:28px}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.logo{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.logo span{color:var(--accent)}
+.date-badge{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface2);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}
+.tagline{font-size:13px;color:var(--muted)}
+.tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:3px;margin-bottom:20px}
+.tab{flex:1;padding:8px 12px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;border-radius:9px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.panel{display:none}
+.panel.active{display:block}
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:540px){.context-grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.field input,.field textarea,.field select{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;padding:10px 12px;outline:none;transition:border-color .15s;resize:none;width:100%}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+.field textarea{min-height:72px;line-height:1.5}
+.field select option{background:var(--surface2)}
+.gen-btn{width:100%;padding:13px;background:var(--accent2);color:#fff;border:none;border-radius:var(--radius);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px}
+.gen-btn:hover{opacity:.88}
+.gen-btn:disabled{opacity:.4;cursor:not-allowed}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.gen-btn.loading .spinner{display:block}
+.gen-btn.loading .btn-text{opacity:.6}
+@keyframes spin{to{transform:rotate(360deg)}}
+.day-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px}
+.day-title{font-size:16px;font-weight:500;color:var(--text)}
+.day-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.regenerate{font-size:11px;color:var(--accent);background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:border-color .15s;flex-shrink:0}
+.regenerate:hover{border-color:var(--accent)}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:20px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent2);border-radius:2px;transition:width .4s ease}
+.section-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;margin-top:20px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;transition:border-color .15s;cursor:pointer;text-align:left;width:100%}
+.task:hover{border-color:#3a3a42}
+.task.done{opacity:.4}
+.task-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.task.done .task-check{background:var(--accent2);border-color:var(--accent2)}
+.check-icon{display:none;width:10px;height:10px}
+.task.done .check-icon{display:block}
+.task-body{flex:1}
+.task-text{font-size:13px;color:var(--text);line-height:1.5}
+.task.done .task-text{text-decoration:line-through;color:var(--muted)}
+.task-meta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center}
+.tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
+.tag-study{background:#0d2818;color:#34d399;border:1px solid #1a3d25}
+.tag-work{background:#1e1e3a;color:#a78bfa;border:1px solid #2d2d52}
+.tag-life{background:#2a1500;color:#fbbf24;border:1px solid #3d2200}
+.tag-health{background:#2a0d0d;color:#f87171;border:1px solid #3d1515}
+.tag-social{background:#001f2a;color:#38bdf8;border:1px solid #003347}
+.task-time{font-size:10px;color:var(--muted)}
+.note-box{background:var(--surface);border:1px solid #2d2d52;border-radius:10px;padding:14px 16px;margin-top:20px}
+.note-title{font-size:10px;font-weight:500;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.note-box p{font-size:13px;color:var(--muted);line-height:1.7}
+.empty-state{text-align:center;padding:52px 24px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:14px;opacity:.4}
+.empty-title{font-size:15px;color:var(--text);margin-bottom:8px;font-weight:500}
+.empty-sub{font-size:13px;line-height:1.6}
+.error-msg{background:#2a0d0d;border:1px solid #3d1515;border-radius:8px;padding:10px 14px;font-size:12px;color:#f87171;margin-top:10px;display:none}
+.progress-text{font-size:11px;color:var(--muted);text-align:right;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">day<span>flow</span></div>
+      <div class="date-badge" id="date-badge"></div>
+    </div>
+    <div class="tagline">tell me about your life — i'll tell you what to do today</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('context')">my life</button>
+    <button class="tab" onclick="switchTab('today')">today's plan</button>
+  </div>
+
+  <!-- CONTEXT PANEL -->
+  <div class="panel active" id="panel-context">
+    <div class="context-grid">
+      <div class="field">
+        <label>your name</label>
+        <input type="text" id="name" placeholder="e.g. Maame" />
+      </div>
+      <div class="field">
+        <label>today's energy</label>
+        <select id="energy-select">
+          <option value="high">high — ready to go</option>
+          <option value="medium" selected>medium — pretty normal</option>
+          <option value="low">low — barely here</option>
+          <option value="anxious">anxious — a lot on my mind</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>what's going on in your life right now</label>
+        <textarea id="life-context" placeholder="e.g. I'm interning at GCB in the DCOP department, second year CS student with accounting minor, working on ISC² CC certification, treasurer of NSBE, building toward a GRC career..."></textarea>
+      </div>
+      <div class="field full">
+        <label>what absolutely has to happen today</label>
+        <textarea id="must-do" placeholder="e.g. study hypervisor types before tomorrow's questions at work, reply to recruiter email, prep questions for supervisor"></textarea>
+      </div>
+      <div class="field full">
+        <label>what's been hanging over you</label>
+        <textarea id="pending" placeholder="e.g. haven't started the NIST self-study, need to update LinkedIn, haven't replied to that email in 3 days"></textarea>
+      </div>
+      <div class="field">
+        <label>time available today</label>
+        <select id="time-available">
+          <option value="2-3 hours">2–3 hours</option>
+          <option value="4-5 hours" selected>4–5 hours</option>
+          <option value="6-8 hours">6–8 hours</option>
+          <option value="full day">full day</option>
+          <option value="evenings only">evenings only</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>one thing to feel good about tonight</label>
+        <input type="text" id="win" placeholder="e.g. made progress on the CC" />
+      </div>
+    </div>
+    <button class="gen-btn" id="gen-btn" onclick="generateTodos()">
+      <div class="spinner"></div>
+      <span class="btn-text">build my day</span>
+    </button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- TODAY PANEL -->
+  <div class="panel" id="panel-today">
+    <div class="day-header">
+      <div>
+        <div class="day-title" id="day-title">your day</div>
+        <div class="day-sub" id="day-sub"></div>
+      </div>
+      <button class="regenerate" onclick="regenerate()">↻ regenerate</button>
+    </div>
+    <div class="progress-text" id="progress-text">0 of 0 done</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div id="tasks-container">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">no plan yet</div>
+        <div class="empty-sub">fill in your life context on the left and hit "build my day"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const d = new Date();
+document.getElementById('date-badge').textContent = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['context','today'][i] === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+function tagClass(cat){
+  return {'study':'tag-study','work':'tag-work','life':'tag-life','health':'tag-health','social':'tag-social'}[cat] || 'tag-work';
+}
+
+function updateProgress(){
+  const all = document.querySelectorAll('.task');
+  const done = document.querySelectorAll('.task.done');
+  const pct = all.length ? Math.round(done.length/all.length*100) : 0;
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = done.length+' of '+all.length+' done';
+}
+
+function renderTasks(parsed){
+  const c = document.getElementById('tasks-container');
+  c.innerHTML = '';
+  (parsed.sections||[]).forEach(sec => {
+    const lbl = document.createElement('div');
+    lbl.className = 'section-label';
+    lbl.textContent = sec.label;
+    c.appendChild(lbl);
+    const list = document.createElement('div');
+    list.className = 'task-list';
+    (sec.tasks||[]).forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'task';
+      btn.onclick = () => { btn.classList.toggle('done'); updateProgress(); };
+      btn.innerHTML = `<div class="task-check"><svg class="check-icon" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="task-body"><div class="task-text">${t.text}</div><div class="task-meta"><span class="tag ${tagClass(t.category)}">${t.category||'task'}</span>${t.time?`<span class="task-time">${t.time}</span>`:''}</div></div>`;
+      list.appendChild(btn);
+    });
+    c.appendChild(list);
+  });
+  if(parsed.note){
+    const nb = document.createElement('div');
+    nb.className = 'note-box';
+    nb.innerHTML = `<div class="note-title">a note for you</div><p>${parsed.note}</p>`;
+    c.appendChild(nb);
+  }
+  updateProgress();
+}
+
+async function generateTodos(){
+  const name = document.getElementById('name').value.trim();
+  const lifeCtx = document.getElementById('life-context').value.trim();
+  const mustDo = document.getElementById('must-do').value.trim();
+  const pending = document.getElementById('pending').value.trim();
+  const energy = document.getElementById('energy-select').value;
+  const time = document.getElementById('time-available').value;
+  const win = document.getElementById('win').value.trim();
+  const err = document.getElementById('error-msg');
+
+  if(!lifeCtx && !mustDo){
+    err.textContent = "add some context about your life or what needs to happen today first.";
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.classList.add('loading');
+
+  const today = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  const prompt = `You are a thoughtful daily planner for a student. Today is ${today}.
+
+About this person:
+Name: ${name||'the student'}
+Energy: ${energy}
+Life context: ${lifeCtx||'not provided'}
+Must do today: ${mustDo||'nothing specified'}
+Pending / hanging over them: ${pending||'nothing'}
+Time available: ${time}
+Want to feel good about tonight: ${win||'not specified'}
+
+Create a realistic daily to-do list. Be specific, not vague. Match task count to energy (low = 4-6 tasks, medium = 7-9, high = 10-12). Always include at least one easy win early.
+
+Respond ONLY with valid JSON, no markdown, no backticks:
+{
+  "title": "short personalised headline for their day (max 7 words)",
+  "subtitle": "one warm encouraging sentence about today",
+  "sections": [
+    {
+      "label": "section name like morning, deep work, admin, evening",
+      "tasks": [
+        {
+          "text": "specific actionable task",
+          "category": "study|work|life|health|social",
+          "time": "e.g. 20 min"
+        }
+      ]
+    }
+  ],
+  "note": "one honest personal note based on their actual situation — not generic motivation"
+}`;
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const data = await res.json();
+    const raw = data.content.map(i=>i.text||'').join('');
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    document.getElementById('day-title').textContent = parsed.title||'your day';
+    document.getElementById('day-sub').textContent = parsed.subtitle||'';
+    renderTasks(parsed);
+    switchTab('today');
+  } catch(e){
+    err.textContent = 'something went wrong. check your connection and try again.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+  }
+}
+
+function regenerate(){ generateTodos(); }
+</script>
+</body>
+</html>
